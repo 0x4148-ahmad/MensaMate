@@ -1,0 +1,31 @@
+{
+  "name": "mensamate",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "telegram",
+    "bot",
+    "mensa",
+    "canteen"
+  ],
+  "homepage": "https://github.com/0x4148-ahmad/MensaMate#readme",
+  "bugs": {
+    "url": "https://github.com/0x4148-ahmad/MensaMate/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0x4148-ahmad/MensaMate.git"
+  },
+  "license": "ISC",
+  "author": "Ahmad Hussein",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "node-fetch": "^2.7.0",
+    "telegraf": "^4.16.3"
+  }
+}
