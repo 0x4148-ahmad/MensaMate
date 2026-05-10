@@ -10,10 +10,8 @@ bot.use(session());
 db.pragma('foreign_keys = ON');
 
 console.log('Setup MensaMate Bot . . .');
-
 db.exec('CREATE TABLE IF NOT EXISTS canteens (id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL, address TEXT, lat REAL, lng REAL )');
-db.exec('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, telegram_id BIGINT UNIQUE NOT NULL, canteen_id INT NOT NULL, FOREIGN KEY (canteen_id) REFERENCES canteens(id) ON DELETE CASCADE )');
-
+db.exec('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, telegram_chat_id BIGINT UNIQUE NOT NULL, canteen_id INT NOT NULL, FOREIGN KEY (canteen_id) REFERENCES canteens(id) ON DELETE CASCADE )');
 
 async function setupCanteens() {
   console.log("Get API Data . . .");
@@ -41,22 +39,56 @@ async function setupCanteens() {
     console.log("//////////////// Added / Changed " + counter + " new Canteens ////////////////");
   }
   catch (error) {
-    console.log("///////// ERROR /////////");
+    console.log(error.message);
   }
+}
+
+async function getMeals(userName, chatID, date) {
+  date = '2026-05-11';
+  const getCanteenID = db.prepare('SELECT canteen_id FROM users where telegram_chat_id = ?').get(chatID);
+  // console.log(getCanteenID.canteen_id);
+
+  const meals = await fetch('https://openmensa.org/api/v2/canteens/' + getCanteenID.canteen_id + '/days/' + date + '/meals');
+  if (!meals.ok || meals.length === 0)
+    return 'Looks like your Canteen is closed today.\nCheat Day Mode: ON';
+
+  const currentMeals = await meals.json();
+  console.log(currentMeals);
+
+  let message = '<code>Earth to ' + userName + '. . . 🌍\n';
+  message += 'Hello Mate! Here are the meals as you wished.\n\n';
+  message += '┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n';
+  message += '  🍽️ MEALS FOR TODAY; FOR YOU 🍽️  \n';
+  message += '┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</code>\n\n';
+// .toFixed(2).replace('.', ',')
+  currentMeals.forEach(meal => {
+    message += '<strong>◈ ' + meal.category + ': </strong>' + meal.prices?.students +' €\n';
+    message += '  <code>' + meal.name + '</code>\n\n';
+  });
+  message += '<code>';
+  message += '─────────────────────────────────\n';
+  message += '   ✨ Enjoy your Meal Mate! ✨   ';
+  message += '</code>';
+  return message;
 }
 ///////////////////////////////////////// END INIT MENSAMATE /////////////////////////////////////////
 
 
 ///////////////////////////////////////// BEGIN SETUP AND PREPARE MENSAMATE /////////////////////////////////////////
 const check = db.prepare('SELECT COUNT(*) AS count FROM canteens').get();
-
 if (check.count === 0) 
   await setupCanteens();
 
 bot.command('start',(ctx) => {
-  ctx.session = {};
+  ctx.session ??= {};
   ctx.session.status = 'waitingForCity';
   return ctx.reply('Hello! I am your personal Bot, please write me your city Mate');
+});
+
+bot.command('today', async (ctx) => {
+  const text = await getMeals(ctx.from.first_name, ctx.chat.id, "1");
+
+  return ctx.reply(text, { parse_mode: 'HTML' });
 });
 
 bot.on('text', (ctx) => {
@@ -65,14 +97,15 @@ bot.on('text', (ctx) => {
     ctx.session.status = null;
 
     const userCanteens = db.prepare('SELECT id, name FROM canteens WHERE city LIKE ?').all(`%${city}%`);
-    // TODO: Output if empty canteen list
 
+    if (userCanteens.length === 0)
+      return ctx.reply('I cannot find a canteen in that city, please change the city with /start');
 
     const buttons = userCanteens.map(current => [
       { text: current.name, callback_data: `${current.id}` }
     ]);
 
-    return ctx.reply('Choose your canteen or answer again with /start', {
+    return ctx.reply('Choose your canteen or change city with /start', {
       reply_markup: { inline_keyboard: buttons }
     });
   }
@@ -81,22 +114,27 @@ bot.on('text', (ctx) => {
 bot.on('callback_query', async (ctx) => {
   // console.log(ctx.callbackQuery.data);
   const userName = ctx.from.first_name;
-  const telegramID = ctx.from.id;
+  const telegramChatID = ctx.chat.id;
   const canteenID = ctx.callbackQuery.data;
 
+  await ctx.answerCbQuery();
   await ctx.editMessageReplyMarkup(undefined);
 
   try {
-    const insertUser = db.prepare('INSERT OR REPLACE INTO USERS (name, telegram_id, canteen_id) VALUES (?, ?, ?)');
-    insertUser.run(userName, telegramID, canteenID);
-    return ctx.reply('Thank you ' + userName + '. I saved your canteen in my brain.')
+    const insertUser = db.prepare('INSERT OR REPLACE INTO USERS (name, telegram_chat_id, canteen_id) VALUES (?, ?, ?)');
+    insertUser.run(userName, telegramChatID, canteenID);
+    return ctx.editMessageText('Thank you ' + userName + '. I noticed your canteen in my brain.')
   }
   catch(error) {
+    console.error(error.message);
     return ctx.reply('Error: Please try again.')
   }
 
 });
 
+const today = new Date().toISOString().split('T')[0];
+console.log(today);
+
 bot.launch();
-console.log('MensaMate is online !');
+console.log('MensaMate is online!');
 ///////////////////////////////////////// END SETUP AND PREPARE MENSAMATE /////////////////////////////////////////
