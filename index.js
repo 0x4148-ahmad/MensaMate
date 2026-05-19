@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { Telegraf, session } from 'telegraf'
 import Database from 'better-sqlite3';
+import cron from 'node-cron';
 
 ///////////////////////////////////////// BEGIN INIT MENSAMATE /////////////////////////////////////////
 const db = new Database('canteens.db');
@@ -44,7 +45,8 @@ async function setupCanteens() {
 }
 
 async function getMeals(userName, chatID, date) {
-  date = '2026-05-11';
+  // Test: 
+  // date = '2026-05-11';
   const getCanteenID = db.prepare('SELECT canteen_id FROM users where telegram_chat_id = ?').get(chatID);
   // console.log(getCanteenID.canteen_id);
 
@@ -53,17 +55,16 @@ async function getMeals(userName, chatID, date) {
     return 'Looks like your Canteen is closed today.\nCheat Day Mode: ON';
 
   const currentMeals = await meals.json();
-  console.log(currentMeals);
+  // console.log(currentMeals);
 
-  let message = '<code>Earth to ' + userName + '. . . 🌍\n';
-  message += 'Hello Mate! Here are the meals as you wished.\n\n';
+  let message = 'Earth to ' + userName + '. . . 🌍\n';
+  message += 'Loading..\nHello Mate! 👋 Here are the meals as you wished.\n\n<code>';
   message += '┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n';
-  message += '  🍽️ MEALS FOR TODAY; FOR YOU 🍽️  \n';
+  message += '  🍽️ MEALS FOR TODAY; FOR YOU 🍽️   \n';
   message += '┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</code>\n\n';
-// .toFixed(2).replace('.', ',')
   currentMeals.forEach(meal => {
-    message += '<strong>◈ ' + meal.category + ': </strong>' + meal.prices?.students +' €\n';
-    message += '  <code>' + meal.name + '</code>\n\n';
+    message += '<strong>◈ ' + meal.category + ': </strong>' + (meal.prices?.students ? ( meal.prices.students.toFixed(2).replace('.', ',') + ' €' ) : ( '' )) + '\n';
+    message += '<code>' + meal.name.replace('|', 'dazu') + '</code>\n\n';
   });
   message += '<code>';
   message += '─────────────────────────────────\n';
@@ -86,10 +87,22 @@ bot.command('start',(ctx) => {
 });
 
 bot.command('today', async (ctx) => {
-  const text = await getMeals(ctx.from.first_name, ctx.chat.id, "1");
-
+  const text = await getMeals(ctx.from.first_name, ctx.chat.id, getDateWithOffset(0));
   return ctx.reply(text, { parse_mode: 'HTML' });
 });
+
+bot.command('tomorrow', async (ctx) => {
+  const text = await getMeals(ctx.from.first_name, ctx.chat.id, getDateWithOffset(1));
+  return ctx.reply(text, { parse_mode: 'HTML' });
+});
+
+bot.command('canteen', async (ctx) => {
+  ctx.session ??= {};
+  ctx.session.status = 'waitingForCity';
+  return ctx.reply('Want to change your canteen?\nNo problem, just write me your city!');
+});
+
+
 
 bot.on('text', (ctx) => {
   if (ctx.session?.status === 'waitingForCity') {
@@ -132,9 +145,28 @@ bot.on('callback_query', async (ctx) => {
 
 });
 
-const today = new Date().toISOString().split('T')[0];
-console.log(today);
-
+cron.schedule('4 19 * * *', () => {
+  sendDailyMessage();
+}, {
+  timezone: "Europe/Berlin"
+});
 bot.launch();
 console.log('MensaMate is online!');
 ///////////////////////////////////////// END SETUP AND PREPARE MENSAMATE /////////////////////////////////////////
+
+
+///////////////////////////////////////// BEGIN SUPPORT FUNCTIONS /////////////////////////////////////////
+function getDateWithOffset(offset) {
+  const day = new Date();
+  day.setDate(day.getDate() + offset);
+  return day.toISOString().split('T')[0];
+}
+
+async function sendDailyMessage() {
+  const users = db.prepare('SELECT telegram_chat_id as id, name FROM USERS').all();
+  for (const user of users) {
+    const message = await getMeals(user.name, user.id, getDateWithOffset(0));
+    await bot.telegram.sendMessage(user.id, message, { parse_mode: 'HTML' });
+  }
+}
+///////////////////////////////////////// END SUPPORT FUNCTIONS /////////////////////////////////////////
