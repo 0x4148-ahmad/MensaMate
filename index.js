@@ -19,7 +19,7 @@ async function setupCanteens() {
   const canteens = await fetch('https://openmensa.org/api/v2/canteens');
   const data = await canteens.json();
   // console.log(data[1]);
-  let counter;
+  let counter = 0;
   const insert = db.prepare('INSERT OR REPLACE INTO canteens (id, name, city, address, lat, lng) VALUES (?, ?, ?, ? , ?, ?)');
   const transaction = db.transaction((canteens) => {
     canteens.forEach(canteen => {
@@ -128,16 +128,22 @@ bot.command('info', (ctx) => {
   return ctx.reply(message, { parse_mode: 'HTML' });
 });
 
+bot.command('feedback', (ctx) => {
+  ctx.session ??= {};
+  ctx.session.status = 'feedback';
+  return ctx.reply("Please write me your feedback or problems,\n I'll send it to my creator! 😀");
+})
+
 bot.command('stop', (ctx) => {
   const checkIfRegistered = db.prepare('DELETE FROM users WHERE telegram_chat_id = ?').run(ctx.chat.id);
   if (checkIfRegistered.changes)
-    return ctx.reply('I deleted all your data from my brain.\nGoodbye, my Friend! 👋 Hopefully, see you again.');
+    return ctx.reply('I deleted all your data from my brain.\nGoodbye, my Friend! 👋\nHopefully, see you again.');
   else
     return ctx.reply('I cannot find you in my database. But we can become friends with /start ! 🤖');
 });
 
 
-bot.on('text', (ctx) => {
+bot.on('text', async (ctx) => {
   if (ctx.session?.status === 'waitingForCity') {
     const city = ctx.message.text;
     ctx.session.status = null;
@@ -154,6 +160,28 @@ bot.on('text', (ctx) => {
     return ctx.reply('Choose your canteen or change city with /start', {
       reply_markup: { inline_keyboard: buttons }
     });
+  }
+  else if (ctx.session?.status === 'feedback') {
+    ctx.session.status = null;
+    const date = getDateWithOffset(0,false);
+
+    let message = '<b>📩 New Feedback Received!</b>\n\n';
+    message += '🆔 From: ' + ctx.chat.id + '\n';
+    message += '🗓️ Date: ' + date[0] + ', ' + date[1] + '\n';
+    message += '───────────────\n';
+    message += '🔷 BEGIN MESSAGE 🔷\n\n'
+    message += '<code>' + ctx.message.text + '</code>\n\n'
+    message += '🔷 END MESSAGE 🔷\n';
+    message += '───────────────';
+
+    try {
+      await ctx.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message, { parse_mode: 'HTML' });
+    }
+    catch(error) {
+      console.log(error.message);
+      return ctx.reply('🔴 ERROR: Please try again later. 🔴');
+    }
+    return ctx.reply('Thank you! ✌️\nYour feedback has been forwarded to my creator.\nHave a nice day! 🚀');
   }
 });
 
@@ -183,16 +211,23 @@ cron.schedule('4 19 * * *', () => {
 }, {
   timezone: "Europe/Berlin"
 });
+
 bot.launch();
 console.log('MensaMate is online!');
 ///////////////////////////////////////// END SETUP AND PREPARE MENSAMATE /////////////////////////////////////////
 
 
 ///////////////////////////////////////// BEGIN SUPPORT FUNCTIONS /////////////////////////////////////////
-function getDateWithOffset(offset) {
+function getDateWithOffset(offset, onlyDate = true) {
   const day = new Date();
   day.setDate(day.getDate() + offset);
-  return day.toISOString().split('T')[0];
+  if (onlyDate)
+    return day.toISOString().split('T')[0];
+  else {
+    let date = day.toISOString().split('T');
+    date [1] = date[1].split('.')[0];
+    return date;
+  }
 }
 
 async function sendDailyMessage() {
