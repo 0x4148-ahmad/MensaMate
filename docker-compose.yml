@@ -1,0 +1,7 @@
+services:
+  mensamate:
+    container_name: mensamate
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./database.db:/app/database.db
