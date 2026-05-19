@@ -118,13 +118,23 @@ bot.command('canteen', (ctx) => {
   return ctx.reply('Want to change your canteen?\nNo problem, just write me your city!');
 });
 
+bot.command('repo', (ctx) => {
+  let message = '🤖 <b>MensaMate Bot</b> <code>v1.0.0</code>\n';
+  message += '<i>Your smart Canteen Mate</i>\n\n';
+  message += '👤 <b>Author:</b> Ahmad Hussein\n';
+  message += '💻 <b>Tech Stack:</b> Node.js | SQLite | Docker\n';
+  message += '🏠 <b>Host:</b> Raspberry Pi\n\n';
+  message += '📦 <b>Source Code:</b> <a href="https://github.com/0x4148-ahmad/MensaMate">GitHub Repository</a>'
+  return ctx.reply(message, { parse_mode: 'HTML' });
+});
+
 bot.command('stop', (ctx) => {
   const checkIfRegistered = db.prepare('DELETE FROM users WHERE telegram_chat_id = ?').run(ctx.chat.id);
   if (checkIfRegistered.changes)
     return ctx.reply('I deleted all your data from my brain.\nGoodbye, my Friend! 👋 Hopefully, see you again.');
   else
     return ctx.reply('I cannot find you in my database. But we can become friends with /start ! 🤖');
-})
+});
 
 
 bot.on('text', (ctx) => {
