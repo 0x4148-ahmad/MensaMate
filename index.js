@@ -47,7 +47,17 @@ async function setupCanteens() {
 async function getMeals(userName, chatID, date) {
   // Test: 
   // date = '2026-05-11';
-  const getCanteenID = db.prepare('SELECT canteen_id FROM users where telegram_chat_id = ?').get(chatID);
+  let getCanteenID = '';
+  try {
+    getCanteenID = db.prepare('SELECT canteen_id FROM users where telegram_chat_id = ?').get(chatID);
+  }
+  catch (error) {
+    console.log(error.message)
+    return 'I cannot find you in my database. Please register first with /start 🤖';
+  }
+
+  if (!getCanteenID)
+    return 'I cannot find you in my database. Please register first with /start 🤖';
   // console.log(getCanteenID.canteen_id);
 
   const meals = await fetch('https://openmensa.org/api/v2/canteens/' + getCanteenID.canteen_id + '/days/' + date + '/meals');
@@ -72,6 +82,8 @@ async function getMeals(userName, chatID, date) {
   message += '</code>';
   return message;
 }
+
+
 ///////////////////////////////////////// END INIT MENSAMATE /////////////////////////////////////////
 
 
@@ -96,12 +108,23 @@ bot.command('tomorrow', async (ctx) => {
   return ctx.reply(text, { parse_mode: 'HTML' });
 });
 
-bot.command('canteen', async (ctx) => {
+bot.command('canteen', (ctx) => {
+  const checkIfRegistered = db.prepare('SELECT * FROM users where telegram_chat_id = ?').get(ctx.chat.id);
+  if (!checkIfRegistered) 
+    return ctx.reply('I cannot find you in my database. But we can become friends with /start ! 🤖');
+
   ctx.session ??= {};
   ctx.session.status = 'waitingForCity';
   return ctx.reply('Want to change your canteen?\nNo problem, just write me your city!');
 });
 
+bot.command('stop', (ctx) => {
+  const checkIfRegistered = db.prepare('DELETE FROM users WHERE telegram_chat_id = ?').run(ctx.chat.id);
+  if (checkIfRegistered.changes)
+    return ctx.reply('I deleted all your data from my brain.\nGoodbye, my Friend! 👋 Hopefully, see you again.');
+  else
+    return ctx.reply('I cannot find you in my database. But we can become friends with /start ! 🤖');
+})
 
 
 bot.on('text', (ctx) => {
