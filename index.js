@@ -67,8 +67,8 @@ async function getMeals(userName, chatID, date) {
   const currentMeals = await meals.json();
   // console.log(currentMeals);
 
-  let message = 'Earth to ' + userName + '. . . 🌍\n';
-  message += 'Loading..\nHello Mate! 👋 Here are the meals as you wished.\n\n<code>';
+  let message = '';
+  message += 'Hello Mate! 👋\nHere are the meals as you wished.\n\n<code>';
   message += '┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n';
   message += '  🍽️ MEALS FOR TODAY; FOR YOU 🍽️   \n';
   message += '┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</code>\n\n';
