@@ -118,7 +118,7 @@ bot.command('canteen', (ctx) => {
   return ctx.reply('Want to change your canteen?\nNo problem, just write me your city!');
 });
 
-bot.command('repo', (ctx) => {
+bot.command('info', (ctx) => {
   let message = '🤖 <b>MensaMate Bot</b> <code>v1.0.0</code>\n';
   message += '<i>Your smart Canteen Mate</i>\n\n';
   message += '👤 <b>Author:</b> Ahmad Hussein\n';
