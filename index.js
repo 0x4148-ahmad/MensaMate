@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import cron from 'node-cron';
 
 ///////////////////////////////////////// BEGIN INIT MENSAMATE /////////////////////////////////////////
-const db = new Database('canteens.db');
+const db = new Database('data/canteens.db');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 bot.use(session());
@@ -133,6 +133,10 @@ bot.command('feedback', (ctx) => {
   ctx.session.status = 'feedback';
   return ctx.reply("Please write me your feedback or problems,\n I'll send it to my creator! 😀");
 })
+
+bot.command('share', (ctx) => {
+  return ctx.replyWithPhoto({ source: 'images/qrcode_mensamate.jpg' });
+});
 
 bot.command('stop', (ctx) => {
   const checkIfRegistered = db.prepare('DELETE FROM users WHERE telegram_chat_id = ?').run(ctx.chat.id);
