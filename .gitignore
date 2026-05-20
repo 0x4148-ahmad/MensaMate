@@ -147,3 +147,5 @@ vite.config.ts.timestamp-*
 
 # Database
 *.db
+data/*
+!data/.gitkeep

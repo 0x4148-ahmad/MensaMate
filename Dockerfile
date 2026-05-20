@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci
-COPY . .
+COPY --chown=node:node . .
 
 USER node
 CMD ["node", "index.js"]
