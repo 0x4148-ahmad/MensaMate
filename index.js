@@ -135,7 +135,7 @@ bot.command('feedback', (ctx) => {
 })
 
 bot.command('share', (ctx) => {
-  return ctx.replyWithPhoto({ source: 'images/qrcode_mensamate.jpg' });
+  return ctx.replyWithPhoto({ source: 'assets/qrcode_mensamate.jpg' });
 });
 
 bot.command('stop', (ctx) => {
@@ -210,7 +210,7 @@ bot.on('callback_query', async (ctx) => {
 
 });
 
-cron.schedule('4 19 * * *', () => {
+cron.schedule('0 8 * * *', () => {
   sendDailyMessage();
 }, {
   timezone: "Europe/Berlin"
