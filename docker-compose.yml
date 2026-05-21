@@ -5,4 +5,7 @@ services:
     restart: unless-stopped
     
     volumes:
-      - ./data:/app/data
+      - db-data:/app/data
+
+volumes:
+  db-data:
