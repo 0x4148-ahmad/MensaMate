@@ -201,7 +201,7 @@ bot.on('callback_query', async (ctx) => {
   try {
     const insertUser = db.prepare('INSERT OR REPLACE INTO USERS (name, telegram_chat_id, canteen_id) VALUES (?, ?, ?)');
     insertUser.run(userName, telegramChatID, canteenID);
-    return ctx.editMessageText('Thank you ' + userName + '. I noticed your canteen in my brain.')
+    return ctx.editMessageText('Thank you ' + userName + '. I noticed your canteen in my brain.\n🚀 You will get everyday at 8am a notification about your canteens menu.');
   }
   catch(error) {
     console.error(error.message);
@@ -238,7 +238,12 @@ async function sendDailyMessage() {
   const users = db.prepare('SELECT telegram_chat_id as id, name FROM USERS').all();
   for (const user of users) {
     const message = await getMeals(user.name, user.id, getDateWithOffset(0));
-    await bot.telegram.sendMessage(user.id, message, { parse_mode: 'HTML' });
+    try {
+      await bot.telegram.sendMessage(user.id, message, { parse_mode: 'HTML' });
+    }
+    catch(error) {
+      console.log('User:' + user.id + 'blocked the bot.\n' + error.message);
+    }
   }
 }
 ///////////////////////////////////////// END SUPPORT FUNCTIONS /////////////////////////////////////////
