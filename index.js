@@ -70,7 +70,7 @@ async function getMeals(userName, chatID, date) {
   let message = '';
   message += 'Hello ' + userName + '! 👋\nHere are the meals as you wished.\n\n<code>';
   message += '┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n';
-  message += '  🍽️ MEALS FOR TODAY; FOR YOU 🍽️   \n';
+  message += ' 🍽️ MEALS OF THE DAY; FOR YOU 🍽️   \n';
   message += '┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</code>\n\n';
   currentMeals.forEach(meal => {
     message += '<strong>◈ ' + meal.category + ': </strong>' + (meal.prices?.students ? ( meal.prices.students.toFixed(2).replace('.', ',') + ' €' ) : ( '' )) + '\n';
