@@ -62,7 +62,7 @@ async function getMeals(userName, chatID, date) {
 
   const meals = await fetch('https://openmensa.org/api/v2/canteens/' + getCanteenID.canteen_id + '/days/' + date + '/meals');
   if (!meals.ok || meals.length === 0)
-    return 'Looks like your Canteen is closed today.\nCheat Day Mode: ON';
+    return 'Looks like your canteen is closed today.';
 
   const currentMeals = await meals.json();
   // console.log(currentMeals);
